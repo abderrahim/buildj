@@ -9,9 +9,18 @@
 	{
 		"my_program":
 		{
-			"output":  "program",
+			"type":    "program",
 			"tool":    "cc",
-			"input":   "bar.c"
+			"input":   "program.c"
+		},
+		"my_shared_lib":
+		{
+			"type":   "sharedlib",
+			"tool":   "cc",
+			"input":  "lib.c"
+		},
+		"my_static_lib":
+		{
 		}
 	}
 }

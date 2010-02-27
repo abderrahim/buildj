@@ -1,6 +1,12 @@
 import json
-
+	
 WAF_TOOLS = {'cc': 'compiler_cc'}
+# (Tool,Type) -> Waf features map
+
+FEATURES_MAP = {('cc', 'program'):    'cc cprogram',
+                ('cc', 'sharedlib'):  'cc cshlib',
+                ('cc',  'staticlib'): 'cc cstaticlib'}
+
 
 class ProjectTarget:
 	def __init__(self, name, target):
@@ -10,8 +16,7 @@ class ProjectTarget:
 			raise ValueError, "Target class: the target argument must be a dictionary"
 
 	def get_name (self):
-		return self._name
-	
+		return str(self._name)
 			
 	def has_tool (self):
 		return "tool" in self._target
@@ -19,26 +24,29 @@ class ProjectTarget:
 	def get_tool (self):
 		if not self.has_tool():
 			return
-		return self._target["tool"]
+		return str(self._target["tool"])
 	
 	def get_name (self):
-		return self._name
+		return str(self._name)
 		
-	def get_output (self):
-		if "output" not in self._target:
+	def get_type (self):
+		if "type" not in self._target:
 			return
-		return self._target["output"]
+		return str(self._target["type"])
 		
 	def get_features (self):
 		tool = self.get_tool ()
-		output_type = self.get_output ()
+		output_type = self.get_type ()
 		if not tool or not output_type:
 			#TODO: Report tool and target type needed
 			return
-		if tool == 'cc' and output_type == 'program':
-			return 'cc cprogram'
-		#TODO: Report not supported feature
-
+			
+		if (tool, output_type) in FEATURES_MAP:
+			return FEATURES_MAP[(tool, output_type)]
+		else:
+			#TODO: Report lack of support for this combination
+			return
+		
 	def get_input (self):
 		if "input" not in self._target:
 			return
@@ -49,15 +57,15 @@ class ProjectTarget:
 			return [str(target_input),]
 		elif isinstance (target_input, list):
 			#TODO: Check if everything is str
-			return target_input
+			return [str(t) for t in target_input]
 		else:
 			#TODO: Report warning, empty input
 			return []
 		
 	def get_build_arguments (self):
 		return {"features": self.get_features (),
-		             "source":   self.get_input (),
-		             "target":   self.get_name ()}
+            "source":   self.get_input (),
+            "target":   self.get_name ()}
 
 
 class ProjectFile:
@@ -122,5 +130,4 @@ def build(bld):
 
 	for target in project.get_targets ():
 		args = target.get_build_arguments ()
-		print args
 		bld (**args)
