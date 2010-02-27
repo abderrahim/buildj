@@ -15,9 +15,10 @@
 		},
 		"my_shared_lib":
 		{
-			"type":   "sharedlib",
-			"tool":   "cc",
-			"input":  "lib.c"
+			"type":    "sharedlib",
+			"tool":    "cc",
+			"input":   "lib.c",
+			"version": "1.2.3"
 		},
 		"my_static_lib":
 		{
@@ -32,7 +33,7 @@
 			"input":   "program_with_lib.c",
 			"uses":    ["my_static_lib"],
 			"depends": []
-		}
+		},
 		"my_shared_program":
 		{
 			"type":  "program",

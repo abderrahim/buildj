@@ -70,12 +70,23 @@ class ProjectTarget:
 		
 	def get_depends (self):
 		return " ".join(self._get_string_list ("depends"))
+	
+	def get_version (self):
+		if "version" not in self._target:
+			return None
+		return str(self._target["version"])
+		
 		
 	def get_build_arguments (self):
-		return {"features": self.get_features (),
+		args = {"features": self.get_features (),
             "source":   self.get_input (),
             "target":   self.get_name (),
             "uselib_local": self.get_uses ()}
+
+		if self.get_type () == "sharedlib":
+			args["vnum"] = self.get_version ()
+
+		return args
 
 class ProjectFile:
 	def __init__ (self, project="project.js"):
