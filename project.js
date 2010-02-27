@@ -21,6 +21,24 @@
 		},
 		"my_static_lib":
 		{
+			"type":  "staticlib",
+			"tool":  "cc",
+			"input": ["lib.c"]
+		},
+		"my_static_program":
+		{
+			"type":    "program",
+			"tool":    "cc",
+			"input":   "program_with_lib.c",
+			"uses":    ["my_static_lib"],
+			"depends": []
+		}
+		"my_shared_program":
+		{
+			"type":  "program",
+			"tool":  "cc",
+			"input": "program_with_lib.c",
+			"uses":  ["my_shared_lib"]
 		}
 	}
 }

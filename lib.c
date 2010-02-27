@@ -1,4 +1,5 @@
-void shbli_function ()
+
+void dummy_function ()
 {
 	return;
 }

@@ -1,3 +1,4 @@
+import Utils
 import json
 	
 WAF_TOOLS = {'cc': 'compiler_cc'}
@@ -5,7 +6,7 @@ WAF_TOOLS = {'cc': 'compiler_cc'}
 
 FEATURES_MAP = {('cc', 'program'):    'cc cprogram',
                 ('cc', 'sharedlib'):  'cc cshlib',
-                ('cc',  'staticlib'): 'cc cstaticlib'}
+                ('cc', 'staticlib'):  'cc cstaticlib'}
 
 
 class ProjectTarget:
@@ -46,14 +47,13 @@ class ProjectTarget:
 		else:
 			#TODO: Report lack of support for this combination
 			return
-		
-	def get_input (self):
-		if "input" not in self._target:
-			return
-		target_input = self._target["input"]
+	
+	def _get_string_list (self, key):
+		if key not in self._target:
+			return []
+		target_input = self._target[key]
 		
 		if isinstance (target_input, unicode):
-			print target_input
 			return [str(target_input),]
 		elif isinstance (target_input, list):
 			#TODO: Check if everything is str
@@ -62,11 +62,20 @@ class ProjectTarget:
 			#TODO: Report warning, empty input
 			return []
 		
+	def get_input (self):
+		return self._get_string_list ("input")
+		
+	def get_uses (self):
+		return " ".join (self._get_string_list ("uses"))
+		
+	def get_depends (self):
+		return " ".join(self._get_string_list ("depends"))
+		
 	def get_build_arguments (self):
 		return {"features": self.get_features (),
             "source":   self.get_input (),
-            "target":   self.get_name ()}
-
+            "target":   self.get_name (),
+            "uselib_local": self.get_uses ()}
 
 class ProjectFile:
 	def __init__ (self, project="project.js"):
@@ -83,8 +92,9 @@ class ProjectFile:
 		project = self._project
 		if not "targets" in project:
 			return
-			
-		return [ProjectTarget (target_name, project["targets"][target_name])
+		
+		return [ProjectTarget (target_name,
+		                       project["targets"][target_name])
 		          for target_name in project["targets"]]
 
 	def get_tools (self):
@@ -96,37 +106,42 @@ class ProjectFile:
 
 		return tools		             
 
+def parse_project_file (project_file="project.js"):
+	try:
+		project = ProjectFile (project_file)
+	except ValueError, e:
+		raise Utils.WscriptError (str(e), project_file)
+	
+	return project
+		
+
+
 ################################################################################
 ## WAF TARGETS 
 ################################################################################
 
-#TODO: Decorator to open the project file
-#TODO: Cache json values
+#TODO: Cache json values? Worth it?
 #TODO: Allow definition of different json filename
 
 def set_options (opt):
-	try:
-		project = ProjectFile ()
-	except ValueError, e:
-		conf.fatal ("project.js: "+e)
-		
+	project = parse_project_file ()
+	
 	for tool in project.get_tools ():
 		opt.tool_options (WAF_TOOLS[tool])
 
 def configure (conf):
-	try:
-		project = ProjectFile ()
-	except ValueError, e:
-		conf.fatal ("project.js: "+e)
-		
+	project = parse_project_file ()
+	
 	for tool in project.get_tools ():
 		conf.check_tool (WAF_TOOLS[tool])
 
 def build(bld):
+	project = parse_project_file ()
+
 	try:
 		project = ProjectFile ()
 	except ValueError, e:
-		conf.fatal ("project.js: "+e)
+		raise Utils.WscriptError (str(e), "project.js")
 
 	for target in project.get_targets ():
 		args = target.get_build_arguments ()
