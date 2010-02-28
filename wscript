@@ -1,5 +1,6 @@
 import Utils
 import json
+import re
 	
 WAF_TOOLS = {'cc': 'compiler_cc'}
 # (Tool,Type) -> Waf features map
@@ -7,7 +8,6 @@ WAF_TOOLS = {'cc': 'compiler_cc'}
 FEATURES_MAP = {('cc', 'program'):    'cc cprogram',
                 ('cc', 'sharedlib'):  'cc cshlib',
                 ('cc', 'staticlib'):  'cc cstaticlib'}
-
 
 class ProjectTarget:
 	def __init__(self, name, target):
@@ -58,24 +58,23 @@ class ProjectTarget:
 		elif isinstance (target_input, list):
 			#TODO: Check if everything is str
 			return [str(t) for t in target_input]
-		else:
-			#TODO: Report warning, empty input
-			return []
+
+		#TODO: Report warning, empty input
+		return []
 		
 	def get_input (self):
 		return self._get_string_list ("input")
 		
 	def get_uses (self):
-		return " ".join (self._get_string_list ("uses"))
-		
-	def get_depends (self):
-		return " ".join(self._get_string_list ("depends"))
+		return self._get_string_list ("uses")
 	
 	def get_version (self):
 		if "version" not in self._target:
 			return None
 		return str(self._target["version"])
 		
+	def get_packages (self):
+		return self._get_string_list ("packages")
 		
 	def get_build_arguments (self):
 		args = {"features": self.get_features (),
@@ -86,7 +85,76 @@ class ProjectTarget:
 		if self.get_type () == "sharedlib":
 			args["vnum"] = self.get_version ()
 
+		args["uselib"] = []
+		for pkg in self.get_packages ():
+			args["uselib"].append (normalize_package_name(pkg))
+			
 		return args
+			
+
+class ProjectRequirement:
+	def __init__ (self, name, requirement):
+		self._name = name
+		self._requirement = requirement
+
+	def get_name (self):
+		return str(self._name)
+	
+	def get_type (self):
+		if "type" not in self._requirement:
+			#TODO: Type is required
+			return
+
+		return str(self._requirement["type"])
+		
+	def get_version (self):
+		if "version" not in self._requirement:
+			return
+		return str(self._requirement["version"])
+		
+	def is_mandatory (self):
+		if "mandatory" not in self._requirement:
+			return False
+			
+		mandatory = self._requirement["mandatory"]
+		if "True" == mandatory:
+			return True
+		elif "False" == mandatory:
+			return False
+		else:
+			#TODO: Warn about wrong mandatory 
+			pass
+		
+		
+	def get_check_pkg_args (self):
+		args = {"package": self.get_name ()}
+		
+		#Correctly sets the version
+		if self.get_version():
+			version = self.get_version()
+			if version.startswith ("= "):
+				args["exact_version"] = str(version[2:])
+			if version.startswith ("== "):
+				args["exact_version"] = str(version[3:])
+			elif version.startswith (">= "):
+				args["atleast_version"] = str(version[3:])
+			elif version.startswith ("<= "):
+				args["max_version"] = str(version[3:])
+			else:
+				#FIXME: < and > are supported as an argument but not by waf
+				#TODO: Warn that >= is recommended
+				args["atleast_version"] = str(version)
+				pass
+				
+		if self.get_type () == "package":
+			args["mandatory"] = self.is_mandatory ()
+			
+		args["args"] = "--cflags --libs"
+		
+		args["uselib_store"] = normalize_package_name (self.get_name ())
+
+		return args
+
 
 class ProjectFile:
 	def __init__ (self, project="project.js"):
@@ -114,8 +182,26 @@ class ProjectFile:
 		for target in self.get_targets ():
 			if target.has_tool ():
 				tools.append (target.get_tool ())
+		return tools
+	
+	def get_requires (self):
+		project = self._project
+		if not "requires" in project:
+			return
+		
+		return [ProjectRequirement(require, project["requires"][require])
+		          for require in project["requires"]]
+	
+	def get_packages_required (self):
+		requires = self.get_requires ()
+		return [require for require in requires if require.get_type () == "package"]
+	
+	def get_check_pkg_arg_list (self):
+		return [package.get_check_pkg_args ()
+		          for package in self.get_packages_required ()]
 
-		return tools		             
+
+####### Utils ##################################################################
 
 def parse_project_file (project_file="project.js"):
 	try:
@@ -124,8 +210,11 @@ def parse_project_file (project_file="project.js"):
 		raise Utils.WscriptError (str(e), project_file)
 	
 	return project
-		
 
+def normalize_package_name (name):
+	name = name.upper ()
+	nonalpha = re.compile (r'\W')
+	return nonalpha.sub ('_', name)
 
 ################################################################################
 ## WAF TARGETS 
@@ -145,9 +234,14 @@ def configure (conf):
 	
 	for tool in project.get_tools ():
 		conf.check_tool (WAF_TOOLS[tool])
-
+		
+	for args in project.get_check_pkg_arg_list ():
+		conf.check_cfg (**args)
+		
 def build(bld):
 	project = parse_project_file ()
+	
+	print bld.env
 
 	try:
 		project = ProjectFile ()
