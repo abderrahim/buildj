@@ -2,8 +2,8 @@
 	"project":
 	{
 		"name":    "CC Test",
-	  "version": "0.0.1",
-	  "url":     "http://www.codethink.co.uk"
+		"version": "0.0.1",
+		"url":     "http://www.codethink.co.uk"
 	},
 	"requires":
 	{
@@ -55,6 +55,13 @@
 			"tool":     "cc",
 			"input":    ["gtk_program.c"],
 			"packages": ["gtk+-2.0"]
+		},
+		"my_program_with_defines":
+		{
+			"type":     "program",
+			"tool":     "cc",
+			"input":    ["program_with_defines.c"],
+			"defines":  ["FOO", "BAR=\"123\""]
 		}
 	}
 }

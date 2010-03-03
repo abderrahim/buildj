@@ -1,4 +1,5 @@
 import Utils
+import Options
 import json
 import re
 	
@@ -8,6 +9,16 @@ WAF_TOOLS = {'cc': 'compiler_cc'}
 FEATURES_MAP = {('cc', 'program'):    'cc cprogram',
                 ('cc', 'sharedlib'):  'cc cshlib',
                 ('cc', 'staticlib'):  'cc cstaticlib'}
+
+CC_TOOLCHAIN = {'ADDR2LINE': 'addr2line',
+                'AS': 'as', 'CC': 'gcc', 'CPP': 'cpp',
+                'CPPFILT': 'c++filt', 'CXX': 'g++',
+                'DLLTOOL': 'dlltool', 'DLLWRAP': 'dllwrap',
+                'GCOV': 'gcov', 'LD': 'ld', 'NM': 'nm',
+                'OBJCOPY': 'objcopy', 'OBJDUMP': 'objdump',
+                'READELF': 'readelf', 'SIZE': 'size',
+                'STRINGS': 'strings', 'WINDRES': 'windres',
+                'AR': 'ar', 'RANLIB': 'ranlib', 'STRIP': 'strip'}
 
 class ProjectTarget:
 	def __init__(self, name, target):
@@ -75,6 +86,9 @@ class ProjectTarget:
 		
 	def get_packages (self):
 		return self._get_string_list ("packages")
+	
+	def get_defines (self):
+		return self._get_string_list ("defines")
 		
 	def get_build_arguments (self):
 		args = {"features": self.get_features (),
@@ -88,7 +102,11 @@ class ProjectTarget:
 		args["uselib"] = []
 		for pkg in self.get_packages ():
 			args["uselib"].append (normalize_package_name(pkg))
-			
+		
+		defines = self.get_defines ()
+		if defines:
+			args["defines"] = defines
+		
 		return args
 			
 
@@ -216,6 +234,19 @@ def normalize_package_name (name):
 	nonalpha = re.compile (r'\W')
 	return nonalpha.sub ('_', name)
 
+def set_crosscompile_env (prefix, env={}):
+	for tool in CC_TOOLCHAIN:
+		env[tool] = prefix + "-" + CC_TOOLCHAIN[tool]
+		# Setup various target file patterns
+	
+	#Prefix/suffix
+	if ('mingw' in prefix):
+		env['staticlib_PATTERN'] = '%s.lib'
+		env['shlib_PATTERN'] = '%s.dll'
+		env['program_PATTERN'] = '%s.exe'
+
+
+
 ################################################################################
 ## WAF TARGETS 
 ################################################################################
@@ -225,11 +256,22 @@ def normalize_package_name (name):
 
 def set_options (opt):
 	project = parse_project_file ()
+
+	opt.add_option('--buildj-file', action='store', default="project.js", help='Sets the BuilDj file.')	
+	opt.add_option('--target-platform', action='store', default=None, help='Sets the target platform tuple used as a prefix for the gcc toolchain.')
 	
+	included_tools = []
 	for tool in project.get_tools ():
-		opt.tool_options (WAF_TOOLS[tool])
+		tool = WAF_TOOLS[tool]
+		if tool not in included_tools:
+			opt.tool_options (tool)
+			included_tools.append (tool)
 
 def configure (conf):
+	#Cross compile tests
+	if Options.options.target_platform:
+		set_crosscompile_env (Options.options.target_platform, conf.env)
+	
 	project = parse_project_file ()
 	
 	for tool in project.get_tools ():
@@ -241,8 +283,6 @@ def configure (conf):
 def build(bld):
 	project = parse_project_file ()
 	
-	print bld.env
-
 	try:
 		project = ProjectFile ()
 	except ValueError, e:
