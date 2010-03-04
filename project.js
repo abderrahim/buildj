@@ -74,12 +74,18 @@
 			"input":    ["vala_program.vala"],
 			"packages": ["gtk+-2.0"]
 		},
-		"my_vala_library":
+		"my_vala_shared_lib":
 		{
 			"type": "sharedlib",
 			"tool": "vala",
 			"input": ["vala_library.vala"],
 			"version": "12.4.5"
+		},
+		"my_vala_static_lib":
+		{
+			"type": "staticlib",
+			"tool": "vala",
+			"input": ["vala_library.vala"]
 		}
 	}
 }
