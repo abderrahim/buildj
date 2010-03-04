@@ -7,6 +7,10 @@
 	},
 	"requires":
 	{
+		"glib-2.0": {
+			"type": "package",
+			"mandatory": "True"
+		},
 		"gtk+-2.0": 
 		{
 			"type":      "package",
@@ -62,6 +66,20 @@
 			"tool":     "cc",
 			"input":    ["program_with_defines.c"],
 			"defines":  ["FOO", "BAR=\"123\""]
+		},
+		"my_vala_program":
+		{
+			"type":     "program",
+			"tool":     "vala",
+			"input":    ["vala_program.vala"],
+			"packages": ["gtk+-2.0"]
+		},
+		"my_vala_library":
+		{
+			"type": "sharedlib",
+			"tool": "vala",
+			"input": ["vala_library.vala"],
+			"version": "12.4.5"
 		}
 	}
 }

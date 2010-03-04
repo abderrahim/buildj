@@ -2,13 +2,18 @@ import Utils
 import Options
 import json
 import re
-	
-WAF_TOOLS = {'cc': 'compiler_cc'}
-# (Tool,Type) -> Waf features map
 
-FEATURES_MAP = {('cc', 'program'):    'cc cprogram',
-                ('cc', 'sharedlib'):  'cc cshlib',
-                ('cc', 'staticlib'):  'cc cstaticlib'}
+#BuilDj Tool -> Waf tool	
+WAF_TOOLS = {'cc':   'compiler_cc',
+             'vala': 'compiler_cc vala'}
+
+# (Tool,Type) -> Waf features map
+FEATURES_MAP = {('cc', 'program'):     'cc cprogram',
+                ('cc', 'sharedlib'):   'cc cshlib',
+                ('cc', 'staticlib'):   'cc cstaticlib',
+                ('vala', 'program'):   'cc cprogram',
+                ('vala', 'sharedlib'): 'cc cshlib',
+                ('vala', 'staticlib'): 'cc cstaticlib'}
 
 CC_TOOLCHAIN = {'ADDR2LINE': 'addr2line',
                 'AS': 'as', 'CC': 'gcc', 'CPP': 'cpp',
@@ -20,22 +25,22 @@ CC_TOOLCHAIN = {'ADDR2LINE': 'addr2line',
                 'STRINGS': 'strings', 'WINDRES': 'windres',
                 'AR': 'ar', 'RANLIB': 'ranlib', 'STRIP': 'strip'}
 
+DEFAULT_BUILDJ_FILE="project.js"
+
 class ProjectTarget:
 	def __init__(self, name, target):
 		self._name   = name
 		self._target = target
 		if not isinstance (target, dict):
-			raise ValueError, "Target class: the target argument must be a dictionary"
+			raise ValueError, "Target %s: the target argument must be a dictionary" % (name,)
 
 	def get_name (self):
 		return str(self._name)
-			
-	def has_tool (self):
-		return "tool" in self._target
-			
+						
 	def get_tool (self):
-		if not self.has_tool():
-			return
+		if "tool" not in self._target:
+			return None
+
 		return str(self._target["tool"])
 	
 	def get_name (self):
@@ -89,14 +94,24 @@ class ProjectTarget:
 	
 	def get_defines (self):
 		return self._get_string_list ("defines")
-		
+	
+	######### VALA Target ########		
 	def get_build_arguments (self):
 		args = {"features": self.get_features (),
             "source":   self.get_input (),
-            "target":   self.get_name (),
-            "uselib_local": self.get_uses ()}
+            "target":   self.get_name ()}
+		
+		return args
 
-		if self.get_type () == "sharedlib":
+class CcTarget (ProjectTarget):
+	def get_build_arguments (self):
+		args = ProjectTarget.get_build_arguments (self)
+
+		uses = self.get_uses ()
+		if uses:
+			args["uselib_local"] = uses
+
+		if self.get_type () == "sharedlib" and self.get_version ():
 			args["vnum"] = self.get_version ()
 
 		args["uselib"] = []
@@ -106,9 +121,43 @@ class ProjectTarget:
 		defines = self.get_defines ()
 		if defines:
 			args["defines"] = defines
-		
+
 		return args
+
+class ValaTarget (CcTarget):
+	def get_vapi (self):
+		if "vapi" in self._target:
+			return str (self._target["vapi"])
+		
+	def get_gir (self):
+		if "gir" in self._target:	
+			gir = str(self._target["gir"])
 			
+			match = re.match (".*-.*", gir)
+			if match:
+				return gir
+				
+		return None
+
+	def get_build_arguments (self):
+			args = CcTarget.get_build_arguments (self)
+
+			packages = self.get_packages ()
+			if "glib-2.0" not in packages:
+				packages.append ("glib-2.0")
+				
+			if "uselib" in args:
+				args["uselib"].append (normalize_package_name("glib-2.0"))
+			else:
+				args["uselib"] = [normalize_package_name("glib-2.0")]
+			
+			args["packages"] = packages
+			
+			gir = self.get_gir ()
+			if gir:
+				args["gir"] = gir
+			
+			return args
 
 class ProjectRequirement:
 	def __init__ (self, name, requirement):
@@ -190,16 +239,28 @@ class ProjectFile:
 		if not "targets" in project:
 			return
 		
-		return [ProjectTarget (target_name,
-		                       project["targets"][target_name])
-		          for target_name in project["targets"]]
-
+		project_list = []
+		for target_name in project["targets"]:
+			target_json = project["targets"][target_name]
+			if not isinstance (target_json, dict):
+				#TODO: Target object must be a dictionary
+				continue
+			if "tool" not in target_json:
+				#TODO: Target object must have a tool
+				continue
+			#We instance the target class depending on the tool
+			
+			project_list.append (TOOL_CLASS_MAP[target_json["tool"]](target_name, target_json))
+			
+		return project_list
+	
 	def get_tools (self):
 		tools = []
 		
 		for target in self.get_targets ():
-			if target.has_tool ():
-				tools.append (target.get_tool ())
+			tool = target.get_tool ()
+			if tool:
+				tools.append (tool)
 		return tools
 	
 	def get_requires (self):
@@ -217,11 +278,12 @@ class ProjectFile:
 	def get_check_pkg_arg_list (self):
 		return [package.get_check_pkg_args ()
 		          for package in self.get_packages_required ()]
-
-
 ####### Utils ##################################################################
+#Mapping between tools and target classes
+TOOL_CLASS_MAP = {'cc':   CcTarget,
+                  'vala': ValaTarget}
 
-def parse_project_file (project_file="project.js"):
+def parse_project_file (project_file=DEFAULT_BUILDJ_FILE):
 	try:
 		project = ProjectFile (project_file)
 	except ValueError, e:
@@ -277,17 +339,16 @@ def configure (conf):
 	for tool in project.get_tools ():
 		conf.check_tool (WAF_TOOLS[tool])
 		
+	if "vala" in project.get_tools():
+		#TODO: Check if it's already checked
+		conf.check_cfg (package="glib-2.0", mandatory=True)
+
 	for args in project.get_check_pkg_arg_list ():
 		conf.check_cfg (**args)
-		
+				
 def build(bld):
 	project = parse_project_file ()
 	
-	try:
-		project = ProjectFile ()
-	except ValueError, e:
-		raise Utils.WscriptError (str(e), "project.js")
-
 	for target in project.get_targets ():
 		args = target.get_build_arguments ()
 		bld (**args)
