@@ -298,16 +298,24 @@ def normalize_package_name (name):
 
 def set_crosscompile_env (prefix, env={}):
 	for tool in CC_TOOLCHAIN:
-		env[tool] = prefix + "-" + CC_TOOLCHAIN[tool]
+		if tool not in env:
+			env[tool] = prefix + "-" + CC_TOOLCHAIN[tool]
 		# Setup various target file patterns
 	
-	#Prefix/suffix
-	if ('mingw' in prefix):
-		env['staticlib_PATTERN'] = '%s.lib'
-		env['shlib_PATTERN'] = '%s.dll'
-		env['program_PATTERN'] = '%s.exe'
-
-
+	#Windows Prefix/suffix
+	if ('mingw'  in prefix or
+	    'msvc'   in prefix  or
+	    'cygwin' in prefix or
+	    'msys'   in prefix):
+		if not 'staticlib_PATTERN' in env:
+			env['staticlib_PATTERN'] = '%s.lib'
+		if not 'shlib_PATTERN' in env:
+			env['shlib_PATTERN'] = '%s.dll'
+		if not 'program_PATTERN' in env:
+			env['program_PATTERN'] = '%s.exe'
+		
+	if 'PKG_CONFIG_LIBDIR' not in env:
+		env['PKG_CONFIG_LIBDIR'] = '/usr/'+prefix+'/lib'
 
 ################################################################################
 ## WAF TARGETS 
@@ -331,6 +339,7 @@ def set_options (opt):
 
 def configure (conf):
 	#Cross compile tests
+	target_platform = sys.platform
 	if Options.options.target_platform:
 		set_crosscompile_env (Options.options.target_platform, conf.env)
 	
@@ -344,6 +353,7 @@ def configure (conf):
 		conf.check_cfg (package="glib-2.0", mandatory=True)
 
 	for args in project.get_check_pkg_arg_list ():
+		print conf.env
 		conf.check_cfg (**args)
 				
 def build(bld):

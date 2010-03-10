@@ -79,7 +79,8 @@
 			"type": "sharedlib",
 			"tool": "vala",
 			"input": ["vala_library.vala"],
-			"version": "12.4.5"
+			"version": "12.4.5",
+			"gir": "Bleh-1.0"
 		},
 		"my_vala_static_lib":
 		{
