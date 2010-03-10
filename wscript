@@ -339,7 +339,6 @@ def set_options (opt):
 
 def configure (conf):
 	#Cross compile tests
-	target_platform = sys.platform
 	if Options.options.target_platform:
 		set_crosscompile_env (Options.options.target_platform, conf.env)
 	
@@ -353,7 +352,6 @@ def configure (conf):
 		conf.check_cfg (package="glib-2.0", mandatory=True)
 
 	for args in project.get_check_pkg_arg_list ():
-		print conf.env
 		conf.check_cfg (**args)
 				
 def build(bld):
