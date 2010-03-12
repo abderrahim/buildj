@@ -3,6 +3,9 @@ import Options
 import json
 import re
 
+APPNAME = None
+VERSION = None
+
 #BuilDj Tool -> Waf tool	
 WAF_TOOLS = {'cc':   'compiler_cc',
              'cxx':  'compiler_cxx',
@@ -99,7 +102,6 @@ class ProjectTarget:
 	def get_defines (self):
 		return self._get_string_list ("defines")
 	
-	######### VALA Target ########		
 	def get_build_arguments (self):
 		args = {"features": self.get_features (),
             "source":   self.get_input (),
@@ -238,6 +240,35 @@ class ProjectFile:
 	def __repr__ (self):
 		return str (self._json)
 		
+	def get_project_version (self):
+		project = self._project
+		
+		if not "project" in project:
+			#TODO: There must be a project name and a project 
+			return
+
+		project_node = project["project"]
+		
+		if "version" not in project_node:
+			#TODO: There must be a version		
+			pass		
+
+		return str(project_node["version"])
+		
+	def get_project_name (self):
+		project = self._project
+		if "project" not in project:
+			#TODO: There must be a project name and a project 
+			return
+			
+		project_node = project["project"]		
+		if "name" not in project_node:
+			#TODO: There must be a name
+			return
+
+		return  str(project_node["name"])
+		
+		
 	def get_targets (self):
 		project = self._project
 		if not "targets" in project:
@@ -286,7 +317,7 @@ class ProjectFile:
 #Mapping between tools and target classes
 TOOL_CLASS_MAP = {'cc':   CcTarget,
                   'cxx':   CcTarget,
-                  'vala': ValaTarget}
+                  'vala': ValaTarget}		
 
 def parse_project_file (project_file=DEFAULT_BUILDJ_FILE):
 	try:
@@ -295,6 +326,13 @@ def parse_project_file (project_file=DEFAULT_BUILDJ_FILE):
 		raise Utils.WscriptError (str(e), project_file)
 	
 	return project
+
+def set_project_info (project_file=DEFAULT_BUILDJ_FILE):
+		project = parse_project_file ()
+
+		global APPNAME, VERSION
+		APPNAME = project.get_project_name ()
+		VERSION = project.get_project_version ()
 
 def normalize_package_name (name):
 	name = name.upper ()
@@ -351,13 +389,15 @@ def configure (conf):
 	
 	for tool in project.get_tools ():
 		conf.check_tool (WAF_TOOLS[tool])
-		
-	if "vala" in project.get_tools():
-		#TODO: Check if it's already checked
-		conf.check_cfg (package="glib-2.0", mandatory=True)
 
 	for args in project.get_check_pkg_arg_list ():
 		conf.check_cfg (**args)
+		
+	#FIXME: This should be done upstream
+	if "vala" in project.get_tools():
+		if not conf.env.HAVE_GLIB_2_0:
+			conf.check_cfg (package="glib-2.0", mandatory=True)
+
 				
 def build(bld):
 	project = parse_project_file ()

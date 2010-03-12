@@ -26,6 +26,13 @@
 			"tool":    "cc",
 			"input":   ["program.c"]
 		},
+		"my_cpp_program":
+		{
+			"type": "program",
+			"tool": "cxx",
+			"input": ["cpprogram.cpp"],
+			"uses": ["my_static_lib"]
+		},
 		"my_shared_lib":
 		{
 			"type":    "sharedlib",
