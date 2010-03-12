@@ -14,7 +14,7 @@
   <name xml:lang="en">BuilDj</name>
   <shortdesc xml:lang="en">BuilDj: Project Description for the masses.</shortdesc>
   <homepage rdf:resource="http://live.gnome.org/BuilDj" />
-  <category rdf:resource="http://api.gnome.org/doap-extensions#desktop" />
+  <category rdf:resource="http://api.gnome.org/doap-extensions#other" />
 
   <maintainer>
     <foaf:Person>
