@@ -5,12 +5,16 @@ import re
 
 #BuilDj Tool -> Waf tool	
 WAF_TOOLS = {'cc':   'compiler_cc',
+             'cxx':  'compiler_cxx',
              'vala': 'compiler_cc vala'}
 
 # (Tool,Type) -> Waf features map
 FEATURES_MAP = {('cc', 'program'):     'cc cprogram',
                 ('cc', 'sharedlib'):   'cc cshlib',
                 ('cc', 'staticlib'):   'cc cstaticlib',
+                ('cxx', 'program'):    'cxx cprogram',
+                ('cxx', 'sharedlib'):  'cxx cshlib',
+                ('cxx', 'staticlib'):  'cxx cstaticlib',
                 ('vala', 'program'):   'cc cprogram',
                 ('vala', 'sharedlib'): 'cc cshlib',
                 ('vala', 'staticlib'): 'cc cstaticlib'}
@@ -281,6 +285,7 @@ class ProjectFile:
 ####### Utils ##################################################################
 #Mapping between tools and target classes
 TOOL_CLASS_MAP = {'cc':   CcTarget,
+                  'cxx':   CcTarget,
                   'vala': ValaTarget}
 
 def parse_project_file (project_file=DEFAULT_BUILDJ_FILE):
