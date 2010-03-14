@@ -124,11 +124,10 @@ class ProjectFile:
 		"List of pkg-config packages required"
 		requires = self.get_requires ()
 		return [require for require in requires if require.get_type () == "package"]
+			          
+	def replace_options (self, *args):
+		pass
 	
-	def get_check_pkg_arg_list (self):
-		"WAF check_pkg arguments dictionary of all packages"
-		return [package.get_check_pkg_args ()
-		          for package in self.get_packages_required ()]
 
 class ProjectTarget:
 	def __init__(self, name, target):

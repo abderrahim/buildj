@@ -81,8 +81,9 @@ def configure (conf):
 	for tool in project.get_tools ():
 		conf.check_tool (WAF_TOOLS[tool])
 
-	for args in project.get_check_pkg_arg_list ():
-		conf.check_cfg (**args)
+	#We check all the tools' required packages
+	for package in project.get_packages_required ():
+		conf.check_cfg (**package.get_check_pkg_args ())
 		
 	#FIXME: This should be done upstream
 	if "vala" in project.get_tools():
