@@ -41,36 +41,23 @@ class ProjectFile:
 		self._project = dec.decode (self._json)
 		prj.close ()
 
+		#TODO: try to raise some meaningful (and consistent) error
+		self._project_name = self._project['project']['name']
+		self._project_version = self._project['project']['version']
+
+		self._targets = []
+		for target_name, target_data in self._project['targets'].iteritems():
+			assert isinstance(target_data, dict), 'target must be a mapping, "%s" is %r' (target_name, target_data)
+			self._targets.append(ProjectTarget(target_name, target_data))
+
 	def __repr__ (self):
 		return str (self._json)
-		
+
 	def get_project_version (self):
-		project = self._project
-		
-		if not "project" in project:
-			#TODO: There must be a project name and a project 
-			return
-
-		project_node = project["project"]
-		
-		if "version" not in project_node:
-			#TODO: There must be a version		
-			pass		
-
-		return str(project_node["version"])
+		return self._project_version
 		
 	def get_project_name (self):
-		project = self._project
-		if "project" not in project:
-			#TODO: There must be a project name and a project 
-			return
-			
-		project_node = project["project"]		
-		if "name" not in project_node:
-			#TODO: There must be a name
-			return
-
-		return str(project_node["name"])
+		return self._project_name
 		
 	def get_options (self):
 		project = self._project
@@ -82,36 +69,19 @@ class ProjectFile:
 			option_list.append (ProjectOption (str(option_name),
 			                                   project["options"][option_name]))
 		return option_list
-		
+
 	def get_targets (self):
-		project = self._project
-		if not "targets" in project:
-			return []
-		
-		project_list = []
-		for target_name in project["targets"]:
-			target_json = project["targets"][target_name]
-			if not isinstance (target_json, dict):
-				#TODO: Target object must be a dictionary
-				continue
-			if "tool" not in target_json:
-				#TODO: Target object must have a tool
-				continue
-			#We instance the target class depending on the tool
-			
-			project_list.append (TOOL_CLASS_MAP[target_json["tool"]](target_name, target_json))
-			
-		return project_list
-	
+		return self._targets
+
 	def get_tools (self):
 		tools = []
-		
-		for target in self.get_targets ():
+
+		for target in self._targets:
 			tool = target.get_tool ()
 			if tool and tool != "data":
 				tools.append (tool)
 		return tools
-	
+
 	def get_requires (self):
 		project = self._project
 		if not "requires" in project:
@@ -129,12 +99,21 @@ class ProjectFile:
 		pass
 	
 
-class ProjectTarget:
+class ProjectTarget(object):
+	def __new__(cls, name, target):
+		if not isinstance (target, dict):
+			raise ValueError, "Target %s: the target argument must be a dictionary" % name
+
+		if 'tool' in target:
+			cls = TOOL_CLASS_MAP[target['tool']]
+		else:
+			#TODO: implement tool autodetection
+			raise NotImplementedError, "Target %s: you need to have a tool"
+		return object.__new__(cls, name, target)
+
 	def __init__(self, name, target):
 		self._name   = name
 		self._target = target
-		if not isinstance (target, dict):
-			raise ValueError, "Target %s: the target argument must be a dictionary" % (name,)
 
 	def get_name (self):
 		return str(self._name)
