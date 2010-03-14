@@ -1,0 +1,5 @@
+= Project Creation =
+
+To create a buildj project, copy the waf and buildj.py files and create a
+project.js file following the examples in the project.js file in the repository
+and the spec at http://live.gnome.org/BuilDj/Spec

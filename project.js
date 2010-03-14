@@ -5,17 +5,25 @@
 		"version": "0.0.1",
 		"url":     "http://www.codethink.co.uk"
 	},
+	"options":
+	{
+		"foo":
+		{
+			"description": "Sets the foo option",
+			"default":     "True"	
+		}
+	},
 	"requires":
 	{
 		"glib-2.0": {
-			"type": "package",
+			"type":      "package",
 			"mandatory": "True"
 		},
 		"gtk+-2.0": 
 		{
 			"type":      "package",
 			"version":   "2.14",
-			"mandatory": "True"
+			"mandatory": "${foo}"
 		}
 	},
 	"targets":
@@ -29,7 +37,7 @@
 		"my_cpp_program":
 		{
 			"type": "program",
-			"tool": "cxx",
+			"tool": "c++",
 			"input": ["cpprogram.cpp"],
 			"uses": ["my_static_lib"]
 		},

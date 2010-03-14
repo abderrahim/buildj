@@ -29,7 +29,7 @@ def set_crosscompile_env (prefix, env={}):
 			env[tool] = prefix + "-" + CC_TOOLCHAIN[tool]
 		# Setup various target file patterns
 	
-	#Windows Prefix/suffix
+	#Windows Prefix/suffix (what about bcc and icc?)
 	if ('mingw'  in prefix or
 	    'msvc'   in prefix  or
 	    'cygwin' in prefix or
@@ -54,15 +54,22 @@ def set_crosscompile_env (prefix, env={}):
 def set_options (opt):
 	project = parse_project_file ()
 
+	#BuilDj options
 	opt.add_option('--buildj-file', action='store', default="project.js", help='Sets the BuilDj file.')	
 	opt.add_option('--target-platform', action='store', default=None, help='Sets the target platform tuple used as a prefix for the gcc toolchain.')
+
+  #Project options
+	for option in project.get_options ():
+		opt.add_option("--"+option.get_name (), **option.get_option_arguments ())
 	
+	#Infered options
 	included_tools = []
 	for tool in project.get_tools ():
 		tool = WAF_TOOLS[tool]
 		if tool not in included_tools:
 			opt.tool_options (tool)
 			included_tools.append (tool)
+			
 
 def configure (conf):
 	#Cross compile tests

@@ -2,16 +2,16 @@ import json
 import re
 
 WAF_TOOLS = {'cc':   'compiler_cc',
-             'cxx':  'compiler_cxx',
+             'c++':  'compiler_cxx',
              'vala': 'compiler_cc vala'}
 
 # (Tool,Type) -> Waf features map
 FEATURES_MAP = {('cc', 'program'):     'cc cprogram',
                 ('cc', 'sharedlib'):   'cc cshlib',
                 ('cc', 'staticlib'):   'cc cstaticlib',
-                ('cxx', 'program'):    'cxx cprogram',
-                ('cxx', 'sharedlib'):  'cxx cshlib',
-                ('cxx', 'staticlib'):  'cxx cstaticlib',
+                ('c++', 'program'):    'cxx cprogram',
+                ('c++', 'sharedlib'):  'cxx cshlib',
+                ('c++', 'staticlib'):  'cxx cstaticlib',
                 ('vala', 'program'):   'cc cprogram',
                 ('vala', 'sharedlib'): 'cc cshlib',
                 ('vala', 'staticlib'): 'cc cstaticlib'}
@@ -72,11 +72,21 @@ class ProjectFile:
 
 		return  str(project_node["name"])
 		
+	def get_options (self):
+		project = self._project
+		if not "options" in project:
+			return []
+
+		option_list = []
+		for option_name in project["options"]:
+			option_list.append (ProjectOption (str(option_name),
+			                                   project["options"][option_name]))
+		return option_list
 		
 	def get_targets (self):
 		project = self._project
 		if not "targets" in project:
-			return
+			return []
 		
 		project_list = []
 		for target_name in project["targets"]:
@@ -111,10 +121,12 @@ class ProjectFile:
 		          for require in project["requires"]]
 	
 	def get_packages_required (self):
+		"List of pkg-config packages required"
 		requires = self.get_requires ()
 		return [require for require in requires if require.get_type () == "package"]
 	
 	def get_check_pkg_arg_list (self):
+		"WAF check_pkg arguments dictionary of all packages"
 		return [package.get_check_pkg_args ()
 		          for package in self.get_packages_required ()]
 
@@ -187,6 +199,7 @@ class ProjectTarget:
 		return self._get_string_list ("defines")
 	
 	def get_build_arguments (self):
+		"WAF bld arguments dictionary"
 		args = {"features": self.get_features (),
             "source":   self.get_input (),
             "target":   self.get_name ()}
@@ -230,6 +243,7 @@ class ValaTarget (CcTarget):
 		return None
 
 	def get_build_arguments (self):
+			"WAF bld arguments dictionary"
 			args = CcTarget.get_build_arguments (self)
 
 			packages = self.get_packages ()
@@ -284,6 +298,7 @@ class ProjectRequirement:
 		
 		
 	def get_check_pkg_args (self):
+		"WAF check_pkg arguments dictionary"
 		args = {"package": self.get_name ()}
 		
 		#Correctly sets the version
@@ -312,7 +327,46 @@ class ProjectRequirement:
 
 		return args
 
+class ProjectOption:
+	def __init__ (self, name, option):
+		self._name = str(name)
+		self._option = option
+	
+		if not "default" in option:
+				#TODO: Report lack of default value, default is mandatory
+				return
+			
+		if "description" not in option:
+			#TODO: Report lack of default description as a warning
+			pass
+
+		self._description = str(option["description"])
+		self._default = str(option["default"])
+		self._value = self._default
+
+	def get_name (self):
+		return self._name
+	
+	def get_description (self):
+		return self._description
+	
+	def get_default (self):
+		return self._default
+	
+	def get_value (self):
+		return self._value
+		
+	def set_value (self, value):
+		self._value = value
+		
+		
+	def get_option_arguments (self):
+		"WAF option arguments dictionary"
+		return {"default": self.get_default (),
+		        "action":  "store",
+		        "help":    self.get_description ()}
+
 #Mapping between tools and target classes
 TOOL_CLASS_MAP = {'cc':   CcTarget,
-                  'cxx':   CcTarget,
+                  'c++':  CcTarget,
                   'vala': ValaTarget}
