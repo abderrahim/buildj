@@ -118,8 +118,24 @@ class ProjectTarget(object):
 		if 'tool' in target:
 			cls = TOOL_CLASS_MAP[target['tool']]
 		else:
-			#TODO: implement tool autodetection
-			raise NotImplementedError, "Target %s: you need to have a tool"
+			sources = target['input']
+			tools = set ()
+			for src in sources:
+				for tool, exts in EXT_TOOL_MAP.iteritems ():
+					if any([src.endswith (ext) for ext in exts]):
+						tools.add (tool)
+			tools = tuple(sorted(tools))
+
+			if len(tools) == 1:
+				tool = tools[0]
+			elif tools in MULTI_TOOL_MAP:
+				tool = MULTI_TOOL_MAP[tools]
+			else:
+				raise NotImplementedError, "Target %s: you need to specify a tool"
+
+			target['tool'] = tool
+			cls = TOOL_CLASS_MAP[tool]
+
 		return object.__new__(cls, name, target)
 
 	def __init__(self, name, target):
@@ -378,3 +394,13 @@ TOOL_CLASS_MAP = {'cc':   CcTarget,
                   'c++':  CcTarget,
                   'vala': ValaTarget,
                   'data': DataTarget}
+
+# Mapping between file extensions and tools
+EXT_TOOL_MAP = {'cc':   ('.c', '.h'),
+		'c++':  ('.cpp', '.cxx'),
+		'vala': ('.vala', '.gs')}
+
+# Mapping used when multiple tools are fond (using file extensions)
+# Keys must be sorted tuples
+MULTI_TOOL_MAP = {('c++', 'cc'):  'c++',
+		  ('cc', 'vala'): 'vala'}
