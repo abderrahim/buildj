@@ -1,4 +1,15 @@
-import json
+try:
+	import json
+except ImportError:
+	# Python < 2.6 doesn't have json
+	import simplejson as json
+
+try:
+	json.decoder
+except AttributeError:
+	# this is json-py and not Python's json
+	import simplejson as json
+
 import re
 
 WAF_TOOLS = {'cc':   'compiler_cc',
