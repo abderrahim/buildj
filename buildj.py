@@ -70,7 +70,7 @@ class ProjectFile:
 			#TODO: There must be a name
 			return
 
-		return  str(project_node["name"])
+		return str(project_node["name"])
 		
 	def get_options (self):
 		project = self._project
@@ -108,7 +108,7 @@ class ProjectFile:
 		
 		for target in self.get_targets ():
 			tool = target.get_tool ()
-			if tool:
+			if tool and tool != "data":
 				tools.append (tool)
 		return tools
 	
@@ -205,6 +205,12 @@ class ProjectTarget:
 		
 		return args
 
+	def get_install_files (self):
+		return
+
+	def get_install_path (self):
+		return
+
 class CcTarget (ProjectTarget):
 	def get_build_arguments (self):
 		args = ProjectTarget.get_build_arguments (self)
@@ -261,6 +267,18 @@ class ValaTarget (CcTarget):
 				args["gir"] = gir
 			
 			return args
+
+class DataTarget (ProjectTarget):
+	def get_build_arguments (self):
+		return {}
+
+	def get_install_files (self):
+		if "input" not in self._target:
+			return []
+		return self.get_input ()
+
+	def get_install_path (self):
+		return "${PREFIX}/share/" + self.get_name ()
 
 class ProjectRequirement:
 	def __init__ (self, name, requirement):
@@ -368,4 +386,5 @@ class ProjectOption:
 #Mapping between tools and target classes
 TOOL_CLASS_MAP = {'cc':   CcTarget,
                   'c++':  CcTarget,
-                  'vala': ValaTarget}
+                  'vala': ValaTarget,
+                  'data': DataTarget}

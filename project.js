@@ -102,6 +102,11 @@
 			"type": "staticlib",
 			"tool": "vala",
 			"input": ["vala_library.vala"]
+		},
+		"my_cpp_program_data":
+		{
+			"tool": "data",
+			"input": ["data/buildj.svg"]
 		}
 	}
 }

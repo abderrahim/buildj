@@ -31,7 +31,7 @@ def set_crosscompile_env (prefix, env={}):
 	
 	#Windows Prefix/suffix (what about bcc and icc?)
 	if ('mingw'  in prefix or
-	    'msvc'   in prefix  or
+	    'msvc'   in prefix or
 	    'cygwin' in prefix or
 	    'msys'   in prefix):
 		if not 'staticlib_PATTERN' in env:
@@ -58,7 +58,7 @@ def set_options (opt):
 	opt.add_option('--buildj-file', action='store', default="project.js", help='Sets the BuilDj file.')	
 	opt.add_option('--target-platform', action='store', default=None, help='Sets the target platform tuple used as a prefix for the gcc toolchain.')
 
-  #Project options
+	#Project options
 	for option in project.get_options ():
 		opt.add_option("--"+option.get_name (), **option.get_option_arguments ())
 	
@@ -97,3 +97,7 @@ def build(bld):
 	for target in project.get_targets ():
 		args = target.get_build_arguments ()
 		bld (**args)
+
+		install_files = target.get_install_files ()
+		if install_files:
+			bld.install_files (target.get_install_path (), install_files)
