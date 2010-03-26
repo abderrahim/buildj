@@ -151,13 +151,13 @@ class ProjectTarget(object):
 
 		return str(self._target["tool"])
 	
-	def get_name (self):
-		return str(self._name)
-		
 	def get_type (self):
 		if "type" not in self._target:
 			return
 		return str(self._target["type"])
+
+	def get_path (self):
+		return self._target.get ("path", "")
 		
 	def get_features (self):
 		tool = self.get_tool ()
@@ -206,8 +206,8 @@ class ProjectTarget(object):
 	def get_build_arguments (self):
 		"WAF bld arguments dictionary"
 		args = {"features": self.get_features (),
-            "source":   self.get_input (),
-            "target":   self.get_name ()}
+		        "source":   self.get_input (),
+		        "target":   self.get_name ()}
 		
 		return args
 

@@ -10,7 +10,7 @@
 		"foo":
 		{
 			"description": "Sets the foo option",
-			"default":     "True"	
+			"default":     "True"
 		}
 	},
 	"requires":
@@ -19,7 +19,7 @@
 			"type":      "package",
 			"mandatory": "True"
 		},
-		"gtk+-2.0": 
+		"gtk+-2.0":
 		{
 			"type":      "package",
 			"version":   "2.14",
@@ -38,6 +38,7 @@
 		{
 			"type": "program",
 			"tool": "c++",
+			"path": "cpp",
 			"input": ["cpprogram.cpp"],
 			"uses": ["my_static_lib"]
 		},

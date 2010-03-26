@@ -1,3 +1,4 @@
+import os
 import Utils
 import Options
 from buildj import *
@@ -93,9 +94,11 @@ def configure (conf):
 				
 def build(bld):
 	project = parse_project_file ()
-	
+
 	for target in project.get_targets ():
 		args = target.get_build_arguments ()
+		args['path'] = bld.srcnode.find_dir(target.get_path().split('/'))
+
 		bld (**args)
 
 		install_files = target.get_install_files ()
