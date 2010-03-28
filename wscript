@@ -85,7 +85,7 @@ def configure (conf):
 	#We check all the tools' required packages
 	for package in project.get_packages_required ():
 		conf.check_cfg (**package.get_check_pkg_args ())
-		
+
 	#FIXME: This should be done upstream
 	if "vala" in project.get_tools():
 		if not conf.env.HAVE_GLIB_2_0:
@@ -98,8 +98,7 @@ def build(bld):
 	for target in project.get_targets ():
 		args = target.get_build_arguments ()
 		args['path'] = bld.srcnode.find_dir(target.get_path().split('/'))
-
-		bld (**args)
+		bld.new_task_gen (**args)
 
 		install_files = target.get_install_files ()
 		if install_files:

@@ -42,6 +42,7 @@
 			"type":     "program",
 			"tool":     "vala",
 			"input":    ["vala_program.vala"],
+			"uses":     ["my_vala_shared_lib"],
 			"packages": ["gtk+-2.0"]
 		},
 		"my_vala_shared_lib":

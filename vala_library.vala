@@ -1,5 +1,5 @@
 namespace BuilDj {
-	class Test : Object {
-		public Test ();
+	public class Test : Object {
+		public Test () {}
 	}
 }

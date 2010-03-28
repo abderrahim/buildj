@@ -71,7 +71,7 @@ class ProjectFile:
 				else:
 					path = subdir
 				target_data['path'] = path
-				self._project['targets'] = target_data
+				self._project['targets'][target_name] = target_data
 				self._targets.append(ProjectTarget(target_name, target_data))
 
 	def __repr__ (self):
@@ -237,7 +237,8 @@ class CcTarget (ProjectTarget):
 
 		uses = self.get_uses ()
 		if uses:
-			args["uselib_local"] = uses
+			# waf vala support will modify the list if we pass one
+			args["uselib_local"] = " ".join (uses)
 
 		if self.get_type () == "sharedlib" and self.get_version ():
 			args["vnum"] = self.get_version ()
@@ -249,6 +250,9 @@ class CcTarget (ProjectTarget):
 		defines = self.get_defines ()
 		if defines:
 			args["defines"] = defines
+
+		if self.get_type () in ("sharedlib", "staticlib"):
+			args["export_incdirs"] = '.'
 
 		return args
 
