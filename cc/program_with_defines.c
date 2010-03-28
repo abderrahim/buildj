@@ -3,7 +3,7 @@
 #include <stdio.h>
 int main (int argc, char** argv)
 {
-	printf (BAR "\n");	
+	printf (BAR "\n");
 }
 #endif
 #endif

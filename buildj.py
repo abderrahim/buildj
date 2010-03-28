@@ -48,8 +48,8 @@ class ProjectFile:
 	def __init__ (self, project="project.js"):
 		dec = json.decoder.JSONDecoder ()
 		prj = open(project)
-		self._json = prj.read ()
-		self._project = dec.decode (self._json)
+		data = prj.read ()
+		self._project = dec.decode (data)
 		prj.close ()
 
 		#TODO: try to raise some meaningful (and consistent) error
@@ -58,11 +58,25 @@ class ProjectFile:
 
 		self._targets = []
 		for target_name, target_data in self._project['targets'].iteritems():
-			assert isinstance(target_data, dict), 'target must be a mapping, "%s" is %r' (target_name, target_data)
 			self._targets.append(ProjectTarget(target_name, target_data))
 
+		for subdir in self._project.get ('subdirs', []):
+			prj = open ('%s/%s' % (subdir, project))
+			data = prj.read ()
+			subproject = dec.decode (data)
+			for target_name, target_data in subproject['targets'].iteritems():
+				assert target_name not in self._project['targets']
+				if 'path' in target_data:
+					path = '%s/%s' % (subdir, target_data['path'])
+				else:
+					path = subdir
+				target_data['path'] = path
+				self._project['targets'] = target_data
+				self._targets.append(ProjectTarget(target_name, target_data))
+
 	def __repr__ (self):
-		return str (self._json)
+		enc = json.encoder.JSONEncoder ()
+		return enc.encode (self._project)
 
 	def get_project_version (self):
 		return self._project_version
