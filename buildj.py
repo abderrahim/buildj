@@ -150,7 +150,7 @@ class ProjectTarget(object):
 			target['tool'] = tool
 			cls = TOOL_CLASS_MAP[tool]
 
-		return object.__new__(cls, name, target)
+		return object.__new__(cls)
 
 	def __init__(self, name, target):
 		self._name   = name
